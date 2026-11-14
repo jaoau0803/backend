@@ -3,7 +3,7 @@
 <div align="center">
 
 [![License](https://img.shields.io/github/license/perfect-panel/backend)](LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.27.1%2B-blue)](https://go.dev/)
+[![Go Version](https://img.shields.io/badge/Go-1.27.4%2B-blue)](https://go.dev/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/perfect-panel/backend)](https://goreportcard.com/report/github.com/perfect-panel/backend)
 [![Docker](https://img.shields.io/badge/Docker-Available-blue)](Dockerfile)
 [![CI/CD](https://img.shields.io/github/actions/workflow/status/perfect-panel/backend/release.yml)](.github/workflows/release.yml)
@@ -49,7 +49,7 @@ proxy services. Built with Go, it emphasizes performance, security, and scalabil
 
 ### Prerequisites
 
-- **Go**: 1.27.1 or higher
+- **Go**: 1.27.4 or higher
 - **Database**: MySQL 8.0+, MariaDB 11.8+ or PostgreSQL 16+, and Redis 6.0+
 - **Docker**: Optional, for containerized deployment
 - **Git**: For cloning the repository

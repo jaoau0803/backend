@@ -3,7 +3,7 @@
 <div align="center">
 
 [![License](https://img.shields.io/github/license/perfect-panel/backend)](LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.27.1%2B-blue)](https://go.dev/)
+[![Go Version](https://img.shields.io/badge/Go-1.27.4%2B-blue)](https://go.dev/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/perfect-panel/backend)](https://goreportcard.com/report/github.com/perfect-panel/backend)
 [![Docker](https://img.shields.io/badge/Docker-Available-blue)](Dockerfile)
 [![CI/CD](https://img.shields.io/github/actions/workflow/status/perfect-panel/backend/release.yml)](.github/workflows/release.yml)
@@ -48,7 +48,7 @@ PPanel 服务端是 PPanel 项目的后端组件，为代理服务提供强大�
 
 ### 前提条件
 
-- **Go**：1.27.1 或更高版本
+- **Go**：1.27.4 或更高版本
 - **数据库**：MySQL 8.0+、MariaDB 11.8+ 或 PostgreSQL 16+，以及 Redis 6.0+
 - **Docker**：可选，用于容器化部署
 - **Git**：用于克隆仓库
