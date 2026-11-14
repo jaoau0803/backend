@@ -62,7 +62,7 @@ jobs:
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: perfect-panel/frontend
+          repository: jaoau0803/frontend
           ref: main
           token: ${{ secrets.GH_TOKEN }}
           path: frontend
