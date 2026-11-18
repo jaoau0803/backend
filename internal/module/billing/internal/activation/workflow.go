@@ -33,6 +33,18 @@ type LegacyGuestCache interface {
 	Get(context.Context, string) *redis.StringCmd
 }
 
+// GuestPasswordReader pops the temporary auto-generated password for a guest
+// order once its account is created.
+type GuestPasswordReader interface {
+	PopGeneratedPassword(ctx context.Context, orderNo string) (string, error)
+}
+
+// GuestWelcomeNotifier delivers the auto-generated password to a newly
+// created guest email account.
+type GuestWelcomeNotifier interface {
+	NotifyGuestAccountCreated(ctx context.Context, email, rawPassword string)
+}
+
 // WorkflowOrders is the order persistence the workflow uses outside its
 // stages: it reads the paid order and binds a guest order to its account.
 type WorkflowOrders interface {
@@ -50,6 +62,8 @@ type WorkflowDeps struct {
 	GuestIdentities      portal.GuestAccountReader
 	Subscriptions        SubscriptionFulfiller
 	LegacyGuestCache     LegacyGuestCache
+	GuestPasswords       GuestPasswordReader
+	GuestWelcome         GuestWelcomeNotifier
 	Notifications        Notifier
 	NotificationsEnabled func() bool
 }
@@ -115,6 +129,11 @@ func (w *Workflow) ensureGuestAccount(ctx context.Context, orderInfo *order.Orde
 		}
 		if err != nil {
 			return err
+		}
+		if guest.AuthType == "email" && w.deps.GuestPasswords != nil && w.deps.GuestWelcome != nil {
+			if rawPassword, popErr := w.deps.GuestPasswords.PopGeneratedPassword(ctx, orderInfo.OrderNo); popErr == nil && rawPassword != "" {
+				w.deps.GuestWelcome.NotifyGuestAccountCreated(ctx, guest.Identifier, rawPassword)
+			}
 		}
 	}
 	orderInfo.UserId = userID

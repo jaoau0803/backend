@@ -58,6 +58,18 @@ type EmailAliasReader interface {
 	FindEmailAlias(ctx context.Context, email string) (*user.AuthMethods, error)
 }
 
+// InviteCodeReader resolves an invite code to its referrer account so guest
+// purchases can validate invite codes before creating an order.
+type InviteCodeReader interface {
+	FindUserByReferCode(ctx context.Context, referCode string) (*user.User, error)
+}
+
+// GuestPasswordStore temporarily retains an auto-generated guest password
+// until order activation emails it to the buyer.
+type GuestPasswordStore interface {
+	SaveGeneratedPassword(ctx context.Context, orderNo, rawPassword string, ttl time.Duration) error
+}
+
 // SessionStore issues the Redis-backed session created after a guest
 // purchase completes; the redis client satisfies it structurally.
 type SessionStore interface {
@@ -162,6 +174,7 @@ type GuestVerification struct {
 // domain.
 type RegistrationPolicy struct {
 	StopRegister  bool
+	InviteForced  bool
 	EmailEnabled  bool
 	MobileEnabled bool
 	// EmailDomainSuffixList is the domain allowlist, applied when
@@ -187,6 +200,7 @@ type Deps struct {
 	Sessions           SessionStore
 	Queue              OrderQueue
 	GuestCheckoutCache GuestCheckoutCache
+	GuestPasswords     GuestPasswordStore
 	ExchangeRate       ExchangeRateCache
 	// Gateways opens the gateway of an order's payment method; nil selects
 	// the production gateways.

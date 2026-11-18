@@ -121,7 +121,7 @@ type OrderDetail struct {
 type PortalPurchaseRequest struct {
 	AuthType       string `json:"auth_type" validate:"required" enums:"email,mobile"`
 	Identifier     string `json:"identifier" validate:"required"`
-	Password       string `json:"password" validate:"required,min=8,max=128"`
+	Password       string `json:"password,omitempty" validate:"omitempty,min=8,max=128"`
 	Payment        int64  `json:"payment" validate:"required,gt=0"`
 	SubscribeId    int64  `json:"subscribe_id" validate:"required,gt=0"`
 	Quantity       int64  `json:"quantity" validate:"required,gt=0,lte=1000"`

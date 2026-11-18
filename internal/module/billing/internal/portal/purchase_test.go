@@ -426,3 +426,50 @@ func TestPortalPreviewEqualsTheCreatedOrder(t *testing.T) {
 		})
 	}
 }
+
+type fakeGuestPasswordStore struct {
+	saved map[string]string
+}
+
+func (s *fakeGuestPasswordStore) SaveGeneratedPassword(_ context.Context, orderNo, rawPassword string, _ time.Duration) error {
+	if s.saved == nil {
+		s.saved = map[string]string{}
+	}
+	s.saved[orderNo] = rawPassword
+	return nil
+}
+
+func TestPortalPurchaseGeneratesPasswordWhenOmitted(t *testing.T) {
+	pwStore := &fakeGuestPasswordStore{}
+	s := newGuestShop(t, func(d *Deps) { d.GuestPasswords = pwStore })
+	req := s.request("email", "guest@example.com")
+	req.Password = ""
+
+	resp, err := s.svc.Purchase(context.Background(), req)
+	if err != nil {
+		t.Fatalf("Purchase() error = %v", err)
+	}
+	created := s.h.ReloadOrder(resp.OrderNo)
+	if created.GuestPasswordHash == "" {
+		t.Fatal("expected generated GuestPasswordHash to be stored")
+	}
+	if pw := pwStore.saved[resp.OrderNo]; len(pw) < 8 {
+		t.Fatalf("expected generated password >= 8 chars, got %q", pw)
+	}
+}
+
+func TestPortalPurchaseRequiresInviteCodeWhenInviteForced(t *testing.T) {
+	s := newGuestShop(t, func(d *Deps) {
+		d.Config.Registration = func() RegistrationPolicy {
+			return RegistrationPolicy{EmailEnabled: true, InviteForced: true}
+		}
+	})
+	req := s.request("email", "guest@example.com")
+	_, err := s.svc.Purchase(context.Background(), req)
+	assertCode(t, err, xerr.InviteCodeError)
+
+	req.InviteCode = "VALID123"
+	if _, err := s.svc.Purchase(context.Background(), req); err != nil {
+		t.Fatalf("Purchase() with invite code failed: %v", err)
+	}
+}

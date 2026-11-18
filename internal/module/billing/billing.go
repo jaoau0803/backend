@@ -357,6 +357,30 @@ type Deps struct {
 	Portal             PortalConfig
 }
 
+// redisGuestPasswordStore temporarily holds auto-generated guest passwords
+// in Redis until post-payment activation emails them to the buyer.
+type redisGuestPasswordStore struct {
+	client *redis.Client
+}
+
+func guestGeneratedPasswordKey(orderNo string) string {
+	return "billing:guest_pwd:" + orderNo
+}
+
+func (s *redisGuestPasswordStore) SaveGeneratedPassword(ctx context.Context, orderNo, rawPassword string, ttl time.Duration) error {
+	if s == nil || s.client == nil || orderNo == "" || rawPassword == "" {
+		return nil
+	}
+	return s.client.Set(ctx, guestGeneratedPasswordKey(orderNo), rawPassword, ttl).Err()
+}
+
+func (s *redisGuestPasswordStore) PopGeneratedPassword(ctx context.Context, orderNo string) (string, error) {
+	if s == nil || s.client == nil || orderNo == "" {
+		return "", nil
+	}
+	return s.client.GetDel(ctx, guestGeneratedPasswordKey(orderNo)).Result()
+}
+
 // NewRepoBuilder exports the module-owned repository implementations for
 // store assembly (ADR-001 step-6 preparation).
 func NewRepoBuilder() repository.BillingBuilder {
@@ -379,6 +403,10 @@ func New(deps Deps) Service {
 		SingleModel:  deps.SingleModel,
 		CurrencyUnit: deps.CurrencyUnit,
 	})
+	var guestPasswords *redisGuestPasswordStore
+	if deps.Redis != nil {
+		guestPasswords = &redisGuestPasswordStore{client: deps.Redis}
+	}
 	portalSvc := portal.NewService(portal.Deps{
 		Orders:             deps.Orders,
 		OrderEvents:        portalOrderEvents(deps.OrderEvents),
@@ -392,6 +420,7 @@ func New(deps Deps) Service {
 		Sessions:           deps.Sessions,
 		Queue:              deps.Queue,
 		GuestCheckoutCache: deps.GuestCheckoutCache,
+		GuestPasswords:     guestPasswords,
 		ExchangeRate:       deps.ExchangeRate,
 		Gateways:           gateways,
 		Config:             deps.Portal,
@@ -402,6 +431,9 @@ func New(deps Deps) Service {
 	workflowDeps := deps.PaidOrders
 	workflowDeps.Orders = deps.Orders
 	workflowDeps.Profiles = deps.UserProfiles
+	if workflowDeps.GuestPasswords == nil && guestPasswords != nil {
+		workflowDeps.GuestPasswords = guestPasswords
+	}
 	if workflowDeps.GuestIdentities == nil {
 		// The guest account stage checks the mailbox against the same
 		// identity port the guest purchase checks it against.

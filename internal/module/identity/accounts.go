@@ -20,6 +20,8 @@ type Accounts interface {
 	// FindUser returns the account with its devices and auth methods,
 	// soft-deleted ones included.
 	FindUser(ctx context.Context, id int64) (*user.User, error)
+	// FindUserByReferCode resolves the account that owns invite code referCode.
+	FindUserByReferCode(ctx context.Context, referCode string) (*user.User, error)
 	// FindDeviceForAuth returns the device's owner, identifier and enabled
 	// flag as stored now, bypassing the caches: request authentication reads
 	// it, so a disabled or reassigned device loses its sessions at once.
@@ -123,6 +125,10 @@ func newAccounts(deps Deps) accounts {
 
 func (a accounts) FindUser(ctx context.Context, id int64) (*user.User, error) {
 	return a.users.FindOne(ctx, id)
+}
+
+func (a accounts) FindUserByReferCode(ctx context.Context, referCode string) (*user.User, error) {
+	return a.users.FindOneByReferCode(ctx, referCode)
 }
 
 func (a accounts) FindDeviceForAuth(ctx context.Context, id int64) (*user.Device, error) {

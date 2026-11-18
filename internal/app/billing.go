@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"html"
 	"time"
 
 	"github.com/hibiken/asynq"
@@ -16,6 +18,7 @@ import (
 	"github.com/perfect-panel/server/internal/module/subscription/entity/subscribe"
 	"github.com/perfect-panel/server/internal/module/subscription/entity/usersub"
 	"github.com/perfect-panel/server/internal/repository"
+	"github.com/perfect-panel/server/pkg/logger"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -27,6 +30,7 @@ func newBillingModule(c config.Config, store repository.Store, queue *taskqueue.
 			GuestAccounts:        identity.NewGuestAccounts(store),
 			Subscriptions:        paidOrderSubscription{srv},
 			LegacyGuestCache:     rds,
+			GuestWelcome:         guestWelcomeNotifier{srv: srv, queue: queue},
 			Notifications:        paidOrderNotifications{srv},
 			NotificationsEnabled: func() bool { return srv.Runtime.Config().Telegram.EnableNotify },
 		},
@@ -79,6 +83,7 @@ func newBillingModule(c config.Config, store repository.Store, queue *taskqueue.
 				current := srv.Runtime.Config()
 				return billing.RegistrationPolicy{
 					StopRegister:            current.Register.StopRegister,
+					InviteForced:            current.Invite.ForcedInvite,
 					EmailEnabled:            current.Email.Enable,
 					MobileEnabled:           current.Mobile.Enable,
 					EmailDomainSuffixList:   current.Email.DomainSuffixList,
@@ -175,6 +180,45 @@ func (a billingAccounts) FindUserAuthMethodByOpenID(ctx context.Context, method,
 // rule (portal.EmailAliasReader).
 func (a billingAccounts) FindEmailAlias(ctx context.Context, email string) (*user.AuthMethods, error) {
 	return a.srv.Identity.FindEmailAlias(ctx, email)
+}
+
+// FindUserByReferCode lets guest purchases validate invite codes before order creation.
+func (a billingAccounts) FindUserByReferCode(ctx context.Context, referCode string) (*user.User, error) {
+	return a.srv.Identity.FindUserByReferCode(ctx, referCode)
+}
+
+type guestWelcomeNotifier struct {
+	srv   *Application
+	queue *taskqueue.Client
+}
+
+func (n guestWelcomeNotifier) NotifyGuestAccountCreated(ctx context.Context, email, rawPassword string) {
+	if n.queue == nil || email == "" || rawPassword == "" {
+		return
+	}
+	siteName := n.srv.Runtime.Config().Site.SiteName
+	subject := fmt.Sprintf("[%s] Account Created", siteName)
+	if siteName == "" {
+		subject = "Account Created"
+	}
+	content := fmt.Sprintf(
+		"<p>Your account has been created.</p><p>Email: <strong>%s</strong><br/>Password: <strong>%s</strong></p><p>Please sign in and change your password as soon as possible.</p>",
+		html.EscapeString(email),
+		html.EscapeString(rawPassword),
+	)
+	body, err := json.Marshal(taskqueue.SendEmailPayload{
+		Type:    taskqueue.EmailTypeCustom,
+		Email:   email,
+		Subject: subject,
+		Content: map[string]any{"content": content},
+	})
+	if err != nil {
+		logger.WithContext(ctx).Errorw("[GuestWelcome] Marshal email payload failed", logger.Field("error", err.Error()))
+		return
+	}
+	if _, err := n.queue.EnqueueContext(ctx, asynq.NewTask(taskqueue.ForthwithSendEmail, body), asynq.MaxRetry(3)); err != nil {
+		logger.WithContext(ctx).Errorw("[GuestWelcome] Enqueue email task failed", logger.Field("error", err.Error()), logger.Field("email", email))
+	}
 }
 
 // identityUserCache drops users' cached projections through the identity
