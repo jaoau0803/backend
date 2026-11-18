@@ -170,6 +170,7 @@ func sanitizeRuntimeProtocol(protocol *Protocol) bool {
 		protocol.Security = ""
 		protocol.SNI = ""
 		protocol.Multiplex = ""
+		clearProxyProtocol(protocol)
 		clearTLSClient(protocol)
 		clearCertificate(protocol)
 		clearReality(protocol)
@@ -180,6 +181,7 @@ func sanitizeRuntimeProtocol(protocol *Protocol) bool {
 		protocol.Security = ""
 		protocol.SNI = ""
 		protocol.Multiplex = ""
+		clearProxyProtocol(protocol)
 		clearTLSClient(protocol)
 		clearCertificate(protocol)
 		clearReality(protocol)
@@ -192,6 +194,7 @@ func sanitizeRuntimeProtocol(protocol *Protocol) bool {
 		// The node ignores the listener PSK but still bounds it on v6, so a
 		// stale value could reject an otherwise valid inbound.
 		protocol.ServerKey = ""
+		clearProxyProtocol(protocol)
 		clearTLSClient(protocol)
 		clearCertificate(protocol)
 		clearReality(protocol)
@@ -216,6 +219,7 @@ func sanitizeRuntimeProtocol(protocol *Protocol) bool {
 		protocol.Security = "tls"
 		// The node rejects a multiplex value on QUIC inbounds.
 		protocol.Multiplex = ""
+		clearProxyProtocol(protocol)
 		clearTLSClient(protocol)
 		clearReality(protocol)
 		clearStreamTransport(protocol)
@@ -226,6 +230,7 @@ func sanitizeRuntimeProtocol(protocol *Protocol) bool {
 		protocol.Security = "tls"
 		// The node rejects a multiplex value on QUIC inbounds.
 		protocol.Multiplex = ""
+		clearProxyProtocol(protocol)
 		clearTLSClient(protocol)
 		clearReality(protocol)
 		clearStreamTransport(protocol)
@@ -236,6 +241,7 @@ func sanitizeRuntimeProtocol(protocol *Protocol) bool {
 		protocol.Security = "tls"
 		protocol.DisableSNI = false
 		protocol.UDPRelayMode = ""
+		clearProxyProtocol(protocol)
 		clearTLSClient(protocol)
 		clearReality(protocol)
 		clearStreamTransport(protocol)
@@ -1072,6 +1078,13 @@ func clearNowhereUnsupported(protocol *Protocol) {
 	protocol.ObfsPassword = ""
 	clearQUICControls(protocol)
 	clearEncryption(protocol)
+}
+
+// The PROXY protocol switch only reaches a TCP listener. QUIC inbounds and the
+// protocols whose node listener never wraps one would keep a value that the
+// node silently ignores, so they drop it here.
+func clearProxyProtocol(protocol *Protocol) {
+	protocol.AcceptProxyProtocol = false
 }
 
 func clearStreamTransport(protocol *Protocol) {

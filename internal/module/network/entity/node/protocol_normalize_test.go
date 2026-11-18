@@ -738,3 +738,76 @@ func TestNormalizeProtocolForStorageAllowsShadowsocksrTCPUDPNonPlainObfs(t *test
 		}
 	}
 }
+
+func TestSanitizeProtocolsForNodeDistributionKeepsProxyProtocolPerProtocol(t *testing.T) {
+	protocols := SanitizeProtocolsForNodeDistribution([]Protocol{
+		{
+			Type:                "vless",
+			Port:                443,
+			Enable:              true,
+			Transport:           "ws",
+			Path:                "/ws",
+			Security:            "tls",
+			SNI:                 "node.example.com",
+			CertMode:            "http",
+			AcceptProxyProtocol: true,
+		},
+		{
+			Type:                "shadowsocks",
+			Port:                8388,
+			Enable:              true,
+			Cipher:              "chacha20-ietf-poly1305",
+			AcceptProxyProtocol: false,
+		},
+	})
+	if len(protocols) != 2 {
+		t.Fatalf("protocols = %d, want 2", len(protocols))
+	}
+	if !protocols[0].AcceptProxyProtocol {
+		t.Fatal("vless lost accept_proxy_protocol")
+	}
+	if protocols[1].AcceptProxyProtocol {
+		t.Fatal("shadowsocks gained accept_proxy_protocol")
+	}
+}
+
+func TestSanitizeProtocolsForNodeDistributionKeepsProxyProtocolOnTCPProtocols(t *testing.T) {
+	for _, protocol := range []Protocol{
+		{Type: "vless", Port: 443, Enable: true, Transport: "grpc", ServiceName: "grpc", AcceptProxyProtocol: true},
+		{Type: "vmess", Port: 443, Enable: true, Transport: "xhttp", AcceptProxyProtocol: true},
+		{Type: "trojan", Port: 443, Enable: true, Transport: "tcp", Security: "tls", SNI: "a.example.com", CertMode: "http", AcceptProxyProtocol: true},
+		{Type: "anytls", Port: 443, Enable: true, Security: "tls", SNI: "a.example.com", CertMode: "http", AcceptProxyProtocol: true},
+		{Type: "shadowsocks", Port: 8388, Enable: true, Cipher: "chacha20-ietf-poly1305", AcceptProxyProtocol: true},
+	} {
+		t.Run(protocol.Type+"/"+protocol.Transport, func(t *testing.T) {
+			got := SanitizeProtocolsForNodeDistribution([]Protocol{protocol})
+			if len(got) != 1 {
+				t.Fatalf("protocol was dropped: %#v", protocol)
+			}
+			if !got[0].AcceptProxyProtocol {
+				t.Fatal("accept_proxy_protocol was cleared for a TCP inbound")
+			}
+		})
+	}
+}
+
+func TestSanitizeProtocolsForNodeDistributionClearsProxyProtocolOnQUIC(t *testing.T) {
+	for _, protocol := range []Protocol{
+		{Type: "hysteria", Port: 443, Enable: true, Security: "tls", SNI: "a.example.com", CertMode: "http", AcceptProxyProtocol: true},
+		{Type: "tuic", Port: 443, Enable: true, Security: "tls", SNI: "a.example.com", CertMode: "http", AcceptProxyProtocol: true},
+		{Type: "naive", Port: 443, Enable: true, Security: "tls", SNI: "a.example.com", CertMode: "http", AcceptProxyProtocol: true},
+		{Type: "mieru", Port: 443, Enable: true, AcceptProxyProtocol: true},
+		{Type: "snell", Port: 443, Enable: true, Version: 5, AcceptProxyProtocol: true},
+		{Type: "shadowsocksr", Port: 443, Enable: true, Cipher: "aes-256-cfb", ServerKey: "key", SSRProtocol: "auth_aes128_sha1", AcceptProxyProtocol: true},
+	} {
+		t.Run(protocol.Type, func(t *testing.T) {
+			got := SanitizeProtocolsForNodeDistribution([]Protocol{protocol})
+			if len(got) != 1 {
+				t.Fatalf("protocol was dropped: %#v", protocol)
+			}
+			if got[0].AcceptProxyProtocol {
+				t.Fatalf("%s kept accept_proxy_protocol, which its node listener ignores", protocol.Type)
+			}
+		})
+	}
+}
