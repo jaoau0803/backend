@@ -77,6 +77,11 @@ func TestDefaultNoticeTemplatesRenderTheirData(t *testing.T) {
 			want: []string{"2026-10-01 12:00:00"},
 		},
 		"traffic exceeded": {text: DefaultTrafficExceedEmailTemplate, data: with(nil)},
+		"guest account": {
+			text: DefaultGuestAccountEmailTemplate,
+			data: with(map[string]any{"Email": "guest@example.com", "Password": "secret-password"}),
+			want: []string{"guest@example.com", "secret-password"},
+		},
 	} {
 		got := render(t, tt.text, tt.data)
 		for _, want := range append(tt.want, "Perfect Panel", "https://panel.example.com/logo.png") {

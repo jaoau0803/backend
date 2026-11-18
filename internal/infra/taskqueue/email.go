@@ -14,6 +14,7 @@ const (
 	EmailTypeMaintenance   = "maintenance"
 	EmailTypeExpiration    = "expiration"
 	EmailTypeTrafficExceed = "traffic_exceed"
+	EmailTypeGuestAccount  = "guest_account"
 	EmailTypeCustom        = "custom"
 )
 

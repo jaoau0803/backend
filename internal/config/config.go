@@ -202,6 +202,7 @@ type EmailConfig struct {
 	ExpirationEmailTemplate    string `yaml:"expiration_email_template"`
 	MaintenanceEmailTemplate   string `yaml:"maintenance_email_template"`
 	TrafficExceedEmailTemplate string `yaml:"traffic_exceed_email_template"`
+	GuestAccountEmailTemplate  string `yaml:"guest_account_email_template"`
 	// Subjects pair with the templates above. They are copied from the email
 	// auth method config by field name (internal/infra/mapping), so the
 	// fields must keep the names they have there; empty means the queued
@@ -210,6 +211,7 @@ type EmailConfig struct {
 	ExpirationEmailSubject    string `yaml:"expiration_email_subject"`
 	MaintenanceEmailSubject   string `yaml:"maintenance_email_subject"`
 	TrafficExceedEmailSubject string `yaml:"traffic_exceed_email_subject"`
+	GuestAccountEmailSubject  string `yaml:"guest_account_email_subject"`
 }
 
 type MobileConfig struct {

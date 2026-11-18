@@ -116,6 +116,9 @@ func (h *SendEmailHandler) ProcessTask(ctx context.Context, task *asynq.Task) er
 	case taskqueue.EmailTypeTrafficExceed:
 		bodyTemplate = h.deps.Email().TrafficExceedEmailTemplate
 		subjectTemplate = h.deps.Email().TrafficExceedEmailSubject
+	case taskqueue.EmailTypeGuestAccount:
+		bodyTemplate = h.deps.Email().GuestAccountEmailTemplate
+		subjectTemplate = h.deps.Email().GuestAccountEmailSubject
 	case taskqueue.EmailTypeCustom:
 		if payload.Content == nil {
 			logger.WithContext(ctx).Error("[SendEmail] Custom email content is empty")

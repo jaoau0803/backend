@@ -4,12 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"html"
 	"time"
 
 	"github.com/hibiken/asynq"
 	"github.com/perfect-panel/server/internal/config"
+	"github.com/perfect-panel/server/internal/infra/mail"
 	"github.com/perfect-panel/server/internal/infra/taskqueue"
 	"github.com/perfect-panel/server/internal/module/billing"
 	"github.com/perfect-panel/server/internal/module/identity"
@@ -196,21 +195,17 @@ func (n guestWelcomeNotifier) NotifyGuestAccountCreated(ctx context.Context, ema
 	if n.queue == nil || email == "" || rawPassword == "" {
 		return
 	}
-	siteName := n.srv.Runtime.Config().Site.SiteName
-	subject := fmt.Sprintf("[%s] Account Created", siteName)
-	if siteName == "" {
-		subject = "Account Created"
-	}
-	content := fmt.Sprintf(
-		"<p>Your account has been created.</p><p>Email: <strong>%s</strong><br/>Password: <strong>%s</strong></p><p>Please sign in and change your password as soon as possible.</p>",
-		html.EscapeString(email),
-		html.EscapeString(rawPassword),
-	)
+	current := n.srv.Runtime.Config()
 	body, err := json.Marshal(taskqueue.SendEmailPayload{
-		Type:    taskqueue.EmailTypeCustom,
+		Type:    taskqueue.EmailTypeGuestAccount,
 		Email:   email,
-		Subject: subject,
-		Content: map[string]any{"content": content},
+		Subject: mail.DefaultGuestAccountEmailSubject,
+		Content: map[string]any{
+			"SiteLogo": current.Site.SiteLogo,
+			"SiteName": current.Site.SiteName,
+			"Email":    email,
+			"Password": rawPassword,
+		},
 	})
 	if err != nil {
 		logger.WithContext(ctx).Errorw("[GuestWelcome] Marshal email payload failed", logger.Field("error", err.Error()))

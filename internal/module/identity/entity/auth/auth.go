@@ -140,6 +140,7 @@ type EmailAuthConfig struct {
 	ExpirationEmailTemplate    string `json:"expiration_email_template"`
 	MaintenanceEmailTemplate   string `json:"maintenance_email_template"`
 	TrafficExceedEmailTemplate string `json:"traffic_exceed_email_template"`
+	GuestAccountEmailTemplate  string `json:"guest_account_email_template"`
 	// Subjects pair with the templates above; an empty subject falls back to
 	// the delivery-time default, so pre-existing configs keep sending the
 	// original English subjects.
@@ -147,6 +148,7 @@ type EmailAuthConfig struct {
 	ExpirationEmailSubject    string `json:"expiration_email_subject"`
 	MaintenanceEmailSubject   string `json:"maintenance_email_subject"`
 	TrafficExceedEmailSubject string `json:"traffic_exceed_email_subject"`
+	GuestAccountEmailSubject  string `json:"guest_account_email_subject"`
 }
 
 func (l *EmailAuthConfig) Marshal() string {
@@ -158,6 +160,9 @@ func (l *EmailAuthConfig) Marshal() string {
 	}
 	if l.TrafficExceedEmailTemplate == "" {
 		l.TrafficExceedEmailTemplate = mail.DefaultTrafficExceedEmailTemplate
+	}
+	if l.GuestAccountEmailTemplate == "" {
+		l.GuestAccountEmailTemplate = mail.DefaultGuestAccountEmailTemplate
 	}
 	if l.VerifyEmailTemplate == "" {
 		l.VerifyEmailTemplate = mail.DefaultEmailVerifyTemplate
@@ -173,6 +178,9 @@ func (l *EmailAuthConfig) Marshal() string {
 	}
 	if l.TrafficExceedEmailSubject == "" {
 		l.TrafficExceedEmailSubject = mail.DefaultTrafficExceedEmailSubject
+	}
+	if l.GuestAccountEmailSubject == "" {
+		l.GuestAccountEmailSubject = mail.DefaultGuestAccountEmailSubject
 	}
 	bytes, err := json.Marshal(l)
 	if err != nil {
@@ -195,10 +203,12 @@ func defaultEmailAuthConfig() *EmailAuthConfig {
 		ExpirationEmailTemplate:    mail.DefaultExpirationEmailTemplate,
 		MaintenanceEmailTemplate:   mail.DefaultMaintenanceEmailTemplate,
 		TrafficExceedEmailTemplate: mail.DefaultTrafficExceedEmailTemplate,
+		GuestAccountEmailTemplate:  mail.DefaultGuestAccountEmailTemplate,
 		VerifyEmailSubject:         mail.DefaultEmailVerifySubject,
 		ExpirationEmailSubject:     mail.DefaultExpirationEmailSubject,
 		MaintenanceEmailSubject:    mail.DefaultMaintenanceEmailSubject,
 		TrafficExceedEmailSubject:  mail.DefaultTrafficExceedEmailSubject,
+		GuestAccountEmailSubject:   mail.DefaultGuestAccountEmailSubject,
 	}
 }
 

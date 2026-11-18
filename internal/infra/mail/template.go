@@ -8,6 +8,7 @@ const (
 	DefaultExpirationEmailSubject    = "Subscription Expired"
 	DefaultMaintenanceEmailSubject   = "系统维护通知 / System Maintenance Notice"
 	DefaultTrafficExceedEmailSubject = "Subscription Traffic Exceed"
+	DefaultGuestAccountEmailSubject  = "账户创建成功 / Account Created"
 )
 
 // Default HTML templates of the notification emails, which the stored
@@ -367,6 +368,95 @@ const (
           <br />
           If you need assistance, please contact our support team. Thank you for your continued
           support!
+        </p>
+      </div>
+      <div class="footer">此为系统邮件，请勿回复 / This is a system email, please do not reply</div>
+    </div>
+  </body>
+</html>`
+
+	DefaultGuestAccountEmailTemplate = `<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>账户创建成功 / Account Created</title>
+    <style>
+      .container {
+        border-radius: 5px;
+        width: 500px;
+        margin: 20px auto 0;
+        border: 1px solid #cce7ff;
+        background-color: #f0f8ff;
+        padding: 25px 30px;
+      }
+      .header {
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .logo {
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+        margin-right: 10px;
+      }
+      .site-name {
+        font-size: 18px;
+        font-weight: bold;
+        margin: 0;
+      }
+      .content {
+        margin: 20px 0;
+        font-size: 14px;
+      }
+      .greeting {
+        font-weight: 700;
+        margin: 5px 0;
+      }
+      .credentials {
+        margin: 14px 0;
+        padding: 12px 16px;
+        border-radius: 4px;
+        background-color: #ffffff;
+        border: 1px solid #d9ecff;
+      }
+      .highlight {
+        color: #007bff;
+        font-weight: bold;
+      }
+      .footer {
+        border-top: #99ccff 1px solid;
+        margin-top: 20px;
+        padding-top: 5px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #777;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <img src="{{.SiteLogo}}" class="logo" />
+        <p class="site-name">{{.SiteName}}</p>
+      </div>
+      <div class="content">
+        <p class="greeting">Hi, 尊敬的用户 / Dear User</p>
+        <p>
+          您的账户已成功创建，以下是您的初始登录信息：
+          <br />
+          Your account has been created. Here are your initial login credentials:
+        </p>
+        <div class="credentials">
+          <p>登录邮箱 / Email: <span class="highlight">{{.Email}}</span></p>
+          <p>初始密码 / Password: <span class="highlight">{{.Password}}</span></p>
+        </div>
+        <p>
+          请登录后尽快修改密码以确保账户安全。
+          <br />
+          Please sign in and change your password as soon as possible.
         </p>
       </div>
       <div class="footer">此为系统邮件，请勿回复 / This is a system email, please do not reply</div>
